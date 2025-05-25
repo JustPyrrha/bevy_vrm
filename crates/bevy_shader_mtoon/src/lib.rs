@@ -1,13 +1,15 @@
 //! [Bevy](https://bevyengine.org/) plugin implementing the [MToon](https://vrm.dev/en/univrm/shaders/shader_mtoon.html) shader.
 
 use bevy::{asset::load_internal_asset, prelude::*};
+use bevy::asset::weak_handle;
 
 mod shader;
 
-use bevy_mod_outline::{OutlineBundle, OutlinePlugin, OutlineVolume};
+use bevy_mod_outline::{AsyncSceneInheritOutline, OutlinePlugin, OutlineVolume};
 pub use shader::{MtoonMaterial, OutlineMode};
 
-const SHADER_HANDLE: Handle<Shader> = Handle::weak_from_u128(0x2d86c40a175b);
+// const SHADER_HANDLE: Handle<Shader> = Handle::weak_from_u128(0x2d86c40a175b);
+const SHADER_HANDLE: Handle<Shader> = weak_handle!("00000000-0000-0000-0000-2d86c40a175b");
 
 #[derive(Default)]
 pub struct MtoonPlugin;
@@ -22,9 +24,25 @@ impl Plugin for MtoonPlugin {
     }
 }
 
+#[derive(Component, Clone, Debug, Default, Deref, DerefMut, Reflect, PartialEq, Eq)]
+pub struct HMtoonMaterial(pub Handle<MtoonMaterial>);
+
+impl From<HMtoonMaterial> for AssetId<MtoonMaterial> {
+    fn from(value: HMtoonMaterial) -> Self {
+        value.id()
+    }
+}
+
+impl From<&HMtoonMaterial> for AssetId<MtoonMaterial> {
+    fn from(value: &HMtoonMaterial) -> Self {
+        value.id()
+    }
+}
+
+
 #[derive(Bundle, Clone, Default)]
 pub struct MtoonBundle {
-    pub mtoon: Handle<MtoonMaterial>,
+    pub mtoon: HMtoonMaterial,
     pub outline_sync: OutlineSync,
 }
 
@@ -38,7 +56,7 @@ fn update_mtoon_shader(
     sun: Query<(&GlobalTransform, &DirectionalLight), With<MtoonSun>>,
 ) {
     for (_, mtoon) in mtoon.iter_mut() {
-        if let Ok((transform, light)) = sun.get_single() {
+        if let Ok((transform, light)) = sun.single() {
             mtoon.light_dir = transform.back().as_vec3();
             mtoon.light_color = light.color;
         }
@@ -56,7 +74,7 @@ fn add_outline(
     mut entities: Query<Entity, (Without<OutlineVolume>, With<OutlineSync>)>,
 ) {
     for entity in entities.iter_mut() {
-        commands.entity(entity).insert(OutlineBundle::default());
+        commands.entity(entity).insert(AsyncSceneInheritOutline::default());
     }
 }
 
@@ -64,7 +82,7 @@ fn sync_outline(
     cameras: Query<&GlobalTransform, With<Camera>>,
     materials: Res<Assets<MtoonMaterial>>,
     mut entities: Query<
-        (&mut OutlineVolume, &Handle<MtoonMaterial>, &GlobalTransform),
+        (&mut OutlineVolume, &HMtoonMaterial, &GlobalTransform),
         With<OutlineSync>,
     >,
     windows: Query<&Window>,

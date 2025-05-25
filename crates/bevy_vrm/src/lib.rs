@@ -24,6 +24,7 @@ pub mod mtoon {
 }
 
 pub use serde_vrm::vrm0::BoneName;
+use crate::loader::HVrm;
 
 pub struct VrmPlugin;
 pub struct VrmPlugins;
@@ -55,6 +56,6 @@ impl Plugin for VrmPlugin {
 #[derive(Bundle, Default)]
 pub struct VrmBundle {
     pub auto_scene: AutoScene,
-    pub scene_bundle: SceneBundle,
-    pub vrm: Handle<Vrm>,
+    pub scene_root: SceneRoot,
+    pub vrm: HVrm,
 }

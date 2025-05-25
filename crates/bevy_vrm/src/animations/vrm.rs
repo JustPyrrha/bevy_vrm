@@ -1,6 +1,7 @@
 use std::sync::LazyLock;
 
-use bevy::{animation::AnimationTargetId, utils::HashMap};
+use bevy::animation::AnimationTargetId;
+use bevy::platform::collections::HashMap;
 use serde_vrm::vrm0::BoneName;
 
 use crate::animations::target_chain::TargetChain;

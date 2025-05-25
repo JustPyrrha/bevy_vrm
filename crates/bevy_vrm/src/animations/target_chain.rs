@@ -1,4 +1,5 @@
-use bevy::{animation::AnimationTargetId, core::Name};
+use bevy::animation::AnimationTargetId;
+use bevy::prelude::Name;
 
 /// Utility for creating chains of [AnimationTargetId]s.
 #[derive(Default, Clone)]

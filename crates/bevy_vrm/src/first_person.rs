@@ -6,8 +6,8 @@ use bevy::{
         mesh::{morph::MeshMorphWeights, skinning::SkinnedMesh, Indices, VertexAttributeValues},
         view::RenderLayers,
     },
-    utils::{HashMap, HashSet},
 };
+use bevy::platform::collections::{HashMap, HashSet};
 use bevy_shader_mtoon::MtoonMaterial;
 use serde_vrm::vrm0::BoneName;
 
@@ -47,16 +47,16 @@ pub(crate) fn handle_setup_events(
     mut flags: Query<(
         Entity,
         &mut FirstPersonFlag,
-        &Handle<Mesh>,
+        &Mesh3d,
         Option<&Name>,
-        Option<&Handle<StandardMaterial>>,
-        Option<&Handle<MtoonMaterial>>,
+        Option<&MeshMaterial3d<StandardMaterial>>,
+        Option<&MeshMaterial3d<MtoonMaterial>>,
         Option<&MeshMorphWeights>,
     )>,
     mut commands: Commands,
     mut events: EventReader<SetupFirstPerson>,
     mut meshes: ResMut<Assets<Mesh>>,
-    parents: Query<&Parent>,
+    parents: Query<&ChildOf>,
     skins: Query<&SkinnedMesh>,
 ) {
     if bones.is_empty() {
@@ -98,7 +98,7 @@ pub(crate) fn handle_setup_events(
                     continue;
                 };
 
-                let mut to_remove = HashSet::default();
+                let mut to_remove: HashSet<usize> = HashSet::default();
 
                 for (i, item) in joints.iter().enumerate() {
                     for (j, idx) in item.iter().enumerate() {
@@ -134,8 +134,7 @@ pub(crate) fn handle_setup_events(
 
                 let new_ent = commands
                     .spawn((
-                        SpatialBundle::default(),
-                        new_mesh_handle,
+                        Mesh3d(new_mesh_handle),
                         RENDER_LAYERS[&FirstPersonFlag::FirstPersonOnly].clone(),
                     ))
                     .id();
@@ -214,11 +213,11 @@ fn clean_indices<T: Copy + PartialEq + ToUsize>(indices: &mut Vec<T>, vertices: 
 }
 
 /// Walks up the parent tree, searching for a specific Entity.
-fn is_child(target_child: Entity, target_parent: Entity, parents: &Query<&Parent>) -> bool {
+fn is_child(target_child: Entity, target_parent: Entity, parents: &Query<&ChildOf>) -> bool {
     if target_child == target_parent {
         true
     } else if let Ok(parent) = parents.get(target_child) {
-        is_child(parent.get(), target_parent, parents)
+        is_child(parent.parent(), target_parent, parents)
     } else {
         false
     }

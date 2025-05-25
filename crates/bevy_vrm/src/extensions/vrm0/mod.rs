@@ -1,6 +1,6 @@
 use bevy::{asset::LoadedAsset, prelude::*};
 use bevy_gltf_kun::import::gltf::document::ImportContext;
-use bevy_shader_mtoon::{MtoonMaterial, OutlineMode, OutlineSync};
+use bevy_shader_mtoon::{HMtoonMaterial, MtoonBundle, MtoonMaterial, OutlineMode, OutlineSync};
 use gltf_kun::graph::{
     gltf::{Material, Primitive},
     ByteNode,
@@ -33,7 +33,7 @@ pub fn import_material(context: &mut ImportContext, material: Material, ext: Vrm
 
                     context.load_context.add_loaded_labeled_asset(
                         label,
-                        LoadedAsset::new_with_dependencies(mtoon, None),
+                        LoadedAsset::new_with_dependencies(mtoon),
                     );
                 }
             }
@@ -86,8 +86,8 @@ pub fn import_primitive_material(
                     .get_label_handle::<MtoonMaterial>(&label);
 
                 entity
-                    .remove::<Handle<StandardMaterial>>()
-                    .insert((handle, OutlineSync));
+                    .remove::<MtoonMaterial>()
+                    .insert(MtoonBundle { mtoon: HMtoonMaterial(handle), outline_sync: OutlineSync });
             }
             Some(other) => {
                 warn!("Unsupported shader: {:?}", other);
@@ -120,7 +120,7 @@ fn load_mtoon_shader(
     if let Some(texture) = material_property.main_texture(context.graph) {
         let index = context.doc.texture_index(context.graph, texture).unwrap();
         let label = texture_label(index);
-        let handle = context.load_context.get_label_handle(&label);
+        let handle = context.load_context.get_label_handle::<Image>(&label);
         mtoon.base_color_texture = Some(handle);
     }
 
